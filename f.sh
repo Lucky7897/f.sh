@@ -5,15 +5,30 @@ echo "Updating system..."
 sudo apt-get update -y
 sudo apt-get upgrade -y
 
-# Install desktop environment (in case you're running a server version of Ubuntu)
-echo "Installing Ubuntu desktop environment..."
-sudo apt-get install -y ubuntu-desktop
+# Install desktop environment (Xfce)
+echo "Installing Xfce desktop environment..."
+sudo apt-get install -y xfce4 xfce4-goodies
 
-# Install dependencies for Google Chrome
+# Install xrdp for RDP access
+echo "Installing xrdp for RDP..."
+sudo apt-get install -y xrdp
+sudo systemctl enable xrdp
+sudo systemctl start xrdp
+
+# Configure xrdp to use Xfce
+echo "Configuring xrdp to use Xfce..."
+echo xfce4-session > ~/.xsession
+sudo sed -i 's/console/anybody/g' /etc/X11/Xwrapper.config
+sudo systemctl restart xrdp
+
+# Add your user to the ssl-cert group (required for xrdp)
+echo "Adding user to ssl-cert group..."
+sudo adduser $(whoami) ssl-cert
+
+# Install Google Chrome and its dependencies
 echo "Installing Chrome dependencies..."
 sudo apt-get install -y wget libxss1 libappindicator1 libindicator7 gconf-service libnss3-1d libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 libpango1.0-0 fonts-liberation libasound2 libatk1.0-0 libgtk-3-0 libpangocairo-1.0-0 libxrandr2 xdg-utils
 
-# Install Google Chrome
 echo "Installing Google Chrome..."
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 sudo apt install -y ./google-chrome-stable_current_amd64.deb
@@ -36,11 +51,11 @@ sudo apt-get install -y python3 python3-pip
 echo "Installing Python libraries..."
 sudo pip3 install undetected-chromedriver selenium psutil
 
-# Install Xvfb (virtual display for headless mode)
-echo "Installing Xvfb for headless browsing..."
+# Install Xvfb (optional: used for headless mode, not activated here)
+echo "Installing Xvfb for headless browsing (optional)..."
 sudo apt-get install -y xvfb
 
-# Adding swap memory to prevent memory issues (Optional step but recommended)
+# Add swap memory to avoid memory issues (optional but recommended)
 SWAPFILE="/swapfile"
 if [ ! -f $SWAPFILE ]; then
     echo "Adding swap memory..."
@@ -73,6 +88,7 @@ import psutil
 from datetime import datetime
 
 def random_delay(min_delay=1, max_delay=3):
+    """ Introduce a random delay between actions to mimic human behavior. """
     sleep(random.uniform(min_delay, max_delay))
         
 def process_account(username, password, output_file):
@@ -85,7 +101,7 @@ def process_account(username, password, output_file):
     options.add_argument("--incognito")
     options.add_argument("--disable-search-engine-choice-screen")
     options.add_argument("--no-sandbox")
-    
+
     driver = uc.Chrome(options=options)
     try:
         driver.get("https://store.pokemongolive.com/offer-redemption")
@@ -132,7 +148,7 @@ def process_account(username, password, output_file):
         level = level_text.split()[-1]
 
         with open(output_file, "a") as file:
-            file.write(f"{username}:{password}:{level}\\n")
+            file.write(f"{username}:{password}:{level}\n")
 
         print(f"Successfully logged in and recorded data for {username} with level {level}.")
 
@@ -166,10 +182,7 @@ if __name__ == "__main__":
     main()
 EOF
 
-# Make the script executable
-chmod +x pokemongo_script.py
-chmod +x /usr/local/bin/chromedriver
-
-# Run the Python script
-echo "Running the PokemonGo login script..."
-python3 pokemongo_script.py
+# Display message about how to connect via RDP
+echo "Setup complete! You can now connect to this server using RDP."
+echo "Use the following command to run the script:"
+echo "python3 pokemongo_script.py"
